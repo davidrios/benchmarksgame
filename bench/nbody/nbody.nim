@@ -54,27 +54,27 @@ var bodies = [
 proc printf(formatstr: cstring) {.header: "<stdio.h>", importc: "printf", varargs.}
 
 
+iterator mpairsp1[T](a: var openarray[T]): tuple[a1, a2: var T] =
+  for i in countup(0, len(a) - 1):
+    for j in countup(i + 1, len(a) - 1):
+      yield (a[i], a[j])
+
+
 proc advance(bodies: var openarray[Body], dt: float64) =
-  echo("called")
-  for i in countup(0, len(bodies) - 1):
-    var b = bodies[i]
-    for j in countup(i + 1, len(bodies) - 1):
-      var b2 = bodies[j]
-      let
-        dx = b.x - b2.x
-        dy = b.y - b2.y
-        dz = b.z - b2.z
-        distance = sqrt(dx * dx + dy * dy + dz * dz)
-        mag = dt / (distance * distance * distance)
+  for b, b2 in mpairsp1(bodies):
+    let
+      dx = b.x - b2.x
+      dy = b.y - b2.y
+      dz = b.z - b2.z
+      distance = sqrt(dx * dx + dy * dy + dz * dz)
+      mag = dt / (distance * distance * distance)
 
-      b.vx -= dx * b2.mass * mag
-      b.vy -= dy * b2.mass * mag
-      b.vz -= dz * b2.mass * mag
-      b2.vx += dx * b.mass * mag
-      b2.vy += dy * b.mass * mag
-      b2.vz += dz * b.mass * mag
-
-      printf("%d, %d, %f, %f, %f, %f, %f\n", i, j, b.vx, b.vy, b.vz, b2.vx, b2.vy, b2.vz);
+    b.vx -= dx * b2.mass * mag
+    b.vy -= dy * b2.mass * mag
+    b.vz -= dz * b2.mass * mag
+    b2.vx += dx * b.mass * mag
+    b2.vy += dy * b.mass * mag
+    b2.vz += dz * b.mass * mag
 
   for b in mitems(bodies):
     b.x += dt * b.vx;
@@ -83,26 +83,6 @@ proc advance(bodies: var openarray[Body], dt: float64) =
 
 
 proc energy(bodies: var openarray[Body]): float64 =
-  for i in countup(0, len(bodies) - 1):
-    let b = bodies[i]
-    result += 0.5 * b.mass * (b.vx * b.vx + b.vy * b.vy + b.vz * b.vz)
-    for j in countup(i + 1, len(bodies) - 1):
-      let
-        b2 = bodies[j]
-        dx = b.x - b2.x
-        dy = b.y - b2.y
-        dz = b.z - b2.z
-        distance = sqrt(dx * dx + dy * dy + dz * dz)
-      result -= (b.mass * b2.mass) / distance
-
-
-iterator mpairsp1[T](a: openarray[T]): tuple[a1, a2: T] =
-  for i in countup(0, len(a) - 1):
-    for j in countup(i + 1, len(a) - 1):
-      yield (a[i], a[j])
-
-
-proc energy2(bodies: var openarray[Body]): float64 =
   result = 0.0
   for b, b2 in mpairsp1(bodies):
     let
@@ -136,8 +116,6 @@ when isMainModule:
 
   offset_momentum(bodies)
   printf("%.9f\n", energy(bodies))
-
   for i in 0..n-1:
     advance(bodies, 0.01)
-
   printf("%.9f\n", energy(bodies))
