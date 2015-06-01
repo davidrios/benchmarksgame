@@ -61,7 +61,7 @@ iterator mpairsp1[T](a: var openarray[T]): tuple[a1, a2: var T] =
 
 
 proc advance(bodies: var openarray[Body], dt: float64) =
-  for b, b2 in mpairsp1(bodies):
+  for b, b2 in bodies.mpairsp1:
     let
       dx = b.x - b2.x
       dy = b.y - b2.y
@@ -76,7 +76,7 @@ proc advance(bodies: var openarray[Body], dt: float64) =
     b2.vy += dy * b.mass * mag
     b2.vz += dz * b.mass * mag
 
-  for b in mitems(bodies):
+  for b in bodies.mitems:
     b.x += dt * b.vx;
     b.y += dt * b.vy;
     b.z += dt * b.vz;
@@ -84,14 +84,14 @@ proc advance(bodies: var openarray[Body], dt: float64) =
 
 proc energy(bodies: var openarray[Body]): float64 =
   result = 0.0
-  for b, b2 in mpairsp1(bodies):
+  for b, b2 in bodies.mpairsp1:
     let
       dx = b.x - b2.x
       dy = b.y - b2.y
       dz = b.z - b2.z
     result -= ((b.mass * b2.mass) / pow(dx * dx + dy * dy + dz * dz, 0.5))
 
-  for b in items(bodies):
+  for b in bodies.items:
     result += (b.mass * (b.vx * b.vx + b.vy * b.vy + b.vz * b.vz) / 2.0)
 
 
@@ -101,7 +101,7 @@ proc offset_momentum(bodies: var openarray[Body]) =
     py = 0.0
     pz = 0.0
 
-  for body in items(bodies):
+  for body in bodies.items:
     px += body.vx * body.mass;
     py += body.vy * body.mass;
     pz += body.vz * body.mass;
@@ -112,10 +112,10 @@ proc offset_momentum(bodies: var openarray[Body]) =
 
 
 when isMainModule:
-  let n = parseInt(1.paramStr.string)
+  let n = 1.paramStr.string.parseInt
 
-  offset_momentum(bodies)
-  printf("%.9f\n", energy(bodies))
+  bodies.offset_momentum
+  printf("%.9f\n", bodies.energy)
   for i in 0..n-1:
-    advance(bodies, 0.01)
-  printf("%.9f\n", energy(bodies))
+    bodies.advance(0.01)
+  printf("%.9f\n", bodies.energy)
